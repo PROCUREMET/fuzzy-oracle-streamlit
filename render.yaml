@@ -4,8 +4,14 @@ services:
     env: python
     region: oregon
     branch: master
-    rootDirectory: meu_projeto_streamlit
-    buildCommand: pip install -r requirements.txt
+    rootDirectory: meu_projeto_streamlit   # Rodar comandos a partir desta pasta
+    buildCommand: |
+      apt-get update && \
+      apt-get install -y libaio1 && \
+      wget https://download.oracle.com/otn_software/linux/instantclient/instantclient-basic-linux.x64-21.8.0.0.0.zip && \
+      unzip instantclient-basic-linux.x64-21.8.0.0.0.zip -d /usr/lib/oracle && \
+      rm instantclient-basic-linux.x64-21.8.0.0.0.zip && \
+      pip install -r requirements.txt
     startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0
     envVars:
       - key: DB_USER
