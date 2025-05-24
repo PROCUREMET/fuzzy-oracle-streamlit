@@ -6,6 +6,7 @@ import oracledb
 import io
 import os
 
+# Normaliza texto (sem acento e em maiúsculas)
 def normalizar(texto):
     if pd.isna(texto):
         return ""
@@ -16,15 +17,16 @@ def normalizar(texto):
 
 @st.cache_data(show_spinner=True)
 def carregar_dados():
-    oracledb.init_oracle_client(lib_dir=r"C:\oracle\instant_client_21_14")
-    dsn_tns = oracledb.makedsn(
-        host='dbconnect.megaerp.online',
-        port='4221',
-        service_name='xepdb1'
-    )
-    connection = oracledb.connect(user='TECVERDE', password='Mt2GAcp7KH', dsn=dsn_tns)
-    cursor = connection.cursor()
+    # Para uso local, mantenha esta linha. No Render pode ser omitida.
+    # oracledb.init_oracle_client(lib_dir=r"C:\oracle\instant_client_21_14")
 
+    connection = oracledb.connect(
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        dsn=os.getenv("DB_DSN")
+    )
+
+    cursor = connection.cursor()
     query = '''
         SELECT 
             UNI_ST_UNIDADE, 
@@ -46,6 +48,10 @@ def carregar_dados():
     return df
 
 st.title("🔍 Sistema de Correspondência de Itens")
+
+# Controle da aba no session_state
+if "aba_atual" not in st.session_state:
+    st.session_state.aba_atual = "Busca & Cadastro"
 
 # Criação das abas
 abas = ["Busca & Cadastro", "Itens Pendentes para Cadastro"]
@@ -136,7 +142,6 @@ with tab_busca:
             st.success("✅ Item enviado com sucesso para a planilha de cadastro.")
             st.info(f"📁 Arquivo salvo em: `{os.path.abspath(caminho_arquivo)}`")
 
-            # Mostrar preview da planilha diretamente na aba
             with st.expander("📄 Ver Itens Pendentes Salvos"):
                 st.dataframe(df_final)
 
@@ -148,12 +153,6 @@ with tab_pendentes:
     if os.path.exists(caminho_arquivo):
         try:
             df_pendentes = pd.read_excel(caminho_arquivo, engine="openpyxl")
-
-            # Normaliza as colunas principais para visualização também
-            for col in ["Descrição do Item", "Unidade de Medida", "Dimensões", "Marca"]:
-                if col in df_pendentes.columns:
-                    df_pendentes[col] = df_pendentes[col].apply(normalizar)
-
             if not df_pendentes.empty:
                 st.dataframe(df_pendentes)
             else:
