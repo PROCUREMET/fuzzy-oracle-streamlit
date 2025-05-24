@@ -1,5 +1,5 @@
 streamlit
-cx_Oracle
+oracledb
 pandas
 fuzzywuzzy
 python-Levenshtein
